@@ -5,7 +5,7 @@ import {BaseRegistrarImplementation} from "./BaseRegistrarImplementation.sol";
 import {StringUtils} from "./StringUtils.sol";
 import {Resolver} from "../resolvers/Resolver.sol";
 import {ReverseRegistrar} from "../registry/ReverseRegistrar.sol";
-import {IBICRegistrarController, IPriceOracle} from "./IBICRegistrarController.sol";
+import {IBICRegistrarController} from "./IBICRegistrarController.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -39,7 +39,6 @@ contract BICRegistrarController is
         0xc26db91ae2adeba5f9614a4608713fca2a47a826ccd9757b9b163899b320f834;
     uint64 private constant MAX_EXPIRY = type(uint64).max;
     BaseRegistrarImplementation immutable base;
-    IPriceOracle public immutable prices;
     uint256 public immutable minCommitmentAge;
     uint256 public immutable maxCommitmentAge;
     ReverseRegistrar public immutable reverseRegistrar;
@@ -64,7 +63,6 @@ contract BICRegistrarController is
 
     constructor(
         BaseRegistrarImplementation _base,
-        IPriceOracle _prices,
         uint256 _minCommitmentAge,
         uint256 _maxCommitmentAge,
         ReverseRegistrar _reverseRegistrar,
@@ -79,21 +77,46 @@ contract BICRegistrarController is
         }
 
         base = _base;
-        prices = _prices;
         minCommitmentAge = _minCommitmentAge;
         maxCommitmentAge = _maxCommitmentAge;
         reverseRegistrar = _reverseRegistrar;
         nameWrapper = _nameWrapper;
     }
 
+    function price(
+        string memory name,
+        uint256 expires,
+        uint256 duration
+    ) public view returns (Price memory) {
+        uint256 len = name.strlen();
+        uint256 basePrice;
+
+        if (len == 1) {
+            basePrice = 10e10 * duration;
+        } else if (len == 2) {
+            basePrice = 6e10 * duration;
+        } else if (len == 3) {
+            basePrice = 3e10 * duration;
+        } else if (len == 4) {
+            basePrice = 2e10 * duration;
+        } else {
+            basePrice = 1e10 * duration;
+        }
+
+        return Price({
+            base: basePrice,
+            premium: 0
+        });
+    }
+
     function rentPrice(string memory name, uint256 duration)
         public
         view
         override
-        returns (IPriceOracle.Price memory price)
+        returns (Price memory)
     {
         bytes32 label = keccak256(bytes(name));
-        price = prices.price(name, base.nameExpires(uint256(label)), duration);
+        return price(name, base.nameExpires(uint256(label)), duration);
     }
 
     function valid(string memory name) public pure returns (bool) {
@@ -154,7 +177,7 @@ contract BICRegistrarController is
         uint32 fuses,
         uint64 wrapperExpiry
     ) public payable override {
-        IPriceOracle.Price memory price = rentPrice(name, duration);
+        Price memory price = rentPrice(name, duration);
         if (msg.value < price.base + price.premium) {
             revert InsufficientValue();
         }
@@ -239,7 +262,7 @@ contract BICRegistrarController is
         bytes32 labelhash = keccak256(bytes(name));
         bytes32 nodehash = keccak256(abi.encodePacked(BIC_NODE, labelhash));
         uint256 tokenId = uint256(labelhash);
-        IPriceOracle.Price memory price = rentPrice(name, duration);
+        Price memory price = rentPrice(name, duration);
         if (msg.value < price.base) {
             revert InsufficientValue();
         }
