@@ -2,7 +2,7 @@
 pragma solidity ~0.8.17;
 
 import "../registry/ENS.sol";
-import "../ethregistrar/IBaseRegistrar.sol";
+import "../bicregistrar/IBaseRegistrar.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "./IMetadataService.sol";
 

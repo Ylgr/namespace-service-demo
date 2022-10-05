@@ -4,10 +4,9 @@ pragma solidity ~0.8.17;
 import {ERC1155Fuse, IERC165, OperationProhibited} from "./ERC1155Fuse.sol";
 import {Controllable} from "./Controllable.sol";
 import {INameWrapper, CANNOT_UNWRAP, CANNOT_BURN_FUSES, CANNOT_TRANSFER, CANNOT_SET_RESOLVER, CANNOT_SET_TTL, CANNOT_CREATE_SUBDOMAIN, PARENT_CANNOT_CONTROL, CAN_DO_EVERYTHING} from "./INameWrapper.sol";
-import {INameWrapperUpgrade} from "./INameWrapperUpgrade.sol";
 import {IMetadataService} from "./IMetadataService.sol";
 import {ENS} from "../registry/ENS.sol";
-import {IBaseRegistrar} from "../ethregistrar/IBaseRegistrar.sol";
+import {IBaseRegistrar} from "../bicregistrar/IBaseRegistrar.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {BytesUtils} from "./BytesUtils.sol";
@@ -21,7 +20,6 @@ error LabelMismatch(bytes32 labelHash, bytes32 expectedLabelhash);
 error LabelTooShort();
 error LabelTooLong(string label);
 error IncorrectTargetOwner(address owner);
-error CannotUpgrade();
 
 contract NameWrapper is
     Ownable,
@@ -41,7 +39,6 @@ contract NameWrapper is
     bytes32 private constant ROOT_NODE =
         0x0000000000000000000000000000000000000000000000000000000000000000;
 
-    INameWrapperUpgrade public upgradeContract;
     uint64 private constant MAX_EXPIRY = type(uint64).max;
 
     constructor(
@@ -68,7 +65,7 @@ contract NameWrapper is
             MAX_EXPIRY
         );
         names[ROOT_NODE] = "\x00";
-        names[BIC_NODE] = "\x03eth\x00";
+        names[BIC_NODE] = "\x03bic\x00";
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -88,7 +85,7 @@ contract NameWrapper is
 
     /**
      * @notice Gets the owner of a name
-     * @param id Label as a string of the .eth domain to wrap
+     * @param id Label as a string of the .bic domain to wrap
      * @return owner The owner of the name
      */
 
@@ -103,7 +100,7 @@ contract NameWrapper is
 
     /**
      * @notice Gets the data for a name
-     * @param id Label as a string of the .eth domain to wrap
+     * @param id Label as a string of the .bic domain to wrap
      * @return address The owner of the name
      * @return uint32 Fuses of the name
      * @return uint64 Expiry of when the fuses expire for the name
@@ -147,30 +144,6 @@ contract NameWrapper is
     }
 
     /**
-     * @notice Set the address of the upgradeContract of the contract. only admin can do this
-     * @dev The default value of upgradeContract is the 0 address. Use the 0 address at any time
-     * to make the contract not upgradable.
-     * @param _upgradeAddress address of an upgraded contract
-     */
-
-    function setUpgradeContract(INameWrapperUpgrade _upgradeAddress)
-        public
-        onlyOwner
-    {
-        if (address(upgradeContract) != address(0)) {
-            registrar.setApprovalForAll(address(upgradeContract), false);
-            ens.setApprovalForAll(address(upgradeContract), false);
-        }
-
-        upgradeContract = _upgradeAddress;
-
-        if (address(upgradeContract) != address(0)) {
-            registrar.setApprovalForAll(address(upgradeContract), true);
-            ens.setApprovalForAll(address(upgradeContract), true);
-        }
-    }
-
-    /**
      * @notice Checks if msg.sender is the owner or approved by the owner of a name
      * @param node namehash of the name to check
      */
@@ -201,9 +174,9 @@ contract NameWrapper is
     }
 
     /**
-     * @notice Wraps a .eth domain, creating a new token and sending the original ERC721 token to this contract
-     * @dev Can be called by the owner of the name on the .eth registrar or an authorised caller on the registrar
-     * @param label Label as a string of the .eth domain to wrap
+     * @notice Wraps a .bic domain, creating a new token and sending the original ERC721 token to this contract
+     * @dev Can be called by the owner of the name on the .bic registrar or an authorised caller on the registrar
+     * @param label Label as a string of the .bic domain to wrap
      * @param wrappedOwner Owner of the name in this contract
      * @param fuses Initial fuses to set
      * @param expiry When the fuses will expire
@@ -240,15 +213,15 @@ contract NameWrapper is
     }
 
     /**
-     * @dev Registers a new .eth second-level domain and wraps it.
+     * @dev Registers a new .bic second-level domain and wraps it.
      *      Only callable by authorised controllers.
-     * @param label The label to register (Eg, 'foo' for 'foo.eth').
+     * @param label The label to register (Eg, 'foo' for 'foo.bic').
      * @param wrappedOwner The owner of the wrapped name.
      * @param duration The duration, in seconds, to register the name for.
      * @param resolver The resolver address to set on the ENS registry (optional).
      * @param fuses Initial fuses to set
      * @param expiry When the fuses will expire
-     * @return registrarExpiry The expiry date of the new name on the .eth registrar, in seconds since the Unix epoch.
+     * @return registrarExpiry The expiry date of the new name on the .bic registrar, in seconds since the Unix epoch.
      */
 
     function registerAndWrapBIC2LD(
@@ -265,11 +238,11 @@ contract NameWrapper is
     }
 
     /**
-     * @notice Renews a .eth second-level domain.
+     * @notice Renews a .bic second-level domain.
      * @dev Only callable by authorised controllers.
-     * @param tokenId The hash of the label to register (eg, `keccak256('foo')`, for 'foo.eth').
+     * @param tokenId The hash of the label to register (eg, `keccak256('foo')`, for 'foo.bic').
      * @param duration The number of seconds to renew the name for.
-     * @return expires The expiry date of the name on the .eth registrar, in seconds since the Unix epoch.
+     * @return expires The expiry date of the name on the .bic registrar, in seconds since the Unix epoch.
      */
 
     function renew(
@@ -290,7 +263,7 @@ contract NameWrapper is
     }
 
     /**
-     * @notice Wraps a non .eth domain, of any kind. Could be a DNSSEC name vitalik.xyz or a subdomain
+     * @notice Wraps a non .bic domain, of any kind. Could be a DNSSEC name vitalik.xyz or a subdomain
      * @dev Can be called by the owner in the registry or an authorised caller in the registry
      * @param name The name to wrap, in DNS format
      * @param wrappedOwner Owner of the name in this contract
@@ -326,10 +299,10 @@ contract NameWrapper is
     }
 
     /**
-     * @notice Unwraps a .eth domain. e.g. vitalik.eth
+     * @notice Unwraps a .bic domain. e.g. vitalik.bic
      * @dev Can be called by the owner in the wrapper or an authorised caller in the wrapper
-     * @param labelhash Labelhash of the .eth domain
-     * @param registrant Sets the owner in the .eth registrar to this address
+     * @param labelhash Labelhash of the .bic domain
+     * @param registrant Sets the owner in the .bic registrar to this address
      * @param controller Sets the owner in the registry to this address
      */
 
@@ -347,7 +320,7 @@ contract NameWrapper is
     }
 
     /**
-     * @notice Unwraps a non .eth domain, of any kind. Could be a DNSSEC name vitalik.xyz or a subdomain
+     * @notice Unwraps a non .bic domain, of any kind. Could be a DNSSEC name vitalik.xyz or a subdomain
      * @dev Can be called by the owner in the wrapper or an authorised caller in the wrapper
      * @param parentNode Parent namehash of the name e.g. vitalik.xyz would be namehash('xyz')
      * @param labelhash Labelhash of the name, e.g. vitalik.xyz would be keccak256('vitalik')
@@ -390,63 +363,7 @@ contract NameWrapper is
     }
 
     /**
-     * @notice Upgrades a .eth wrapped domain by calling the wrapBIC2LD function of the upgradeContract
-     *     and burning the token of this contract
-     * @dev Can be called by the owner of the name in this contract
-     * @param label Label as a string of the .eth name to upgrade
-     * @param wrappedOwner The owner of the wrapped name
-     */
-
-    function upgradeBIC2LD(
-        string calldata label,
-        address wrappedOwner,
-        address resolver
-    ) public {
-        bytes32 labelhash = keccak256(bytes(label));
-        bytes32 node = _makeNode(BIC_NODE, labelhash);
-        (uint32 fuses, uint64 expiry) = _prepareUpgrade(node);
-
-        upgradeContract.wrapBIC2LD(
-            label,
-            wrappedOwner,
-            fuses,
-            expiry,
-            resolver
-        );
-    }
-
-    /**
-     * @notice Upgrades a non .eth domain of any kind. Could be a DNSSEC name vitalik.xyz or a subdomain
-     * @dev Can be called by the owner or an authorised caller
-     * Requires upgraded Namewrapper to permit old Namewrapper to call `setSubnodeRecord` for all names
-     * @param parentNode Namehash of the parent name
-     * @param label Label as a string of the name to upgrade
-     * @param wrappedOwner Owner of the name in this contract
-     * @param resolver Resolver contract for this name
-     */
-
-    function upgrade(
-        bytes32 parentNode,
-        string calldata label,
-        address wrappedOwner,
-        address resolver
-    ) public {
-        bytes32 labelhash = keccak256(bytes(label));
-        bytes32 node = _makeNode(parentNode, labelhash);
-        (uint32 fuses, uint64 expiry) = _prepareUpgrade(node);
-        upgradeContract.setSubnodeRecord(
-            parentNode,
-            label,
-            wrappedOwner,
-            resolver,
-            0,
-            fuses,
-            expiry
-        );
-    }
-
-    /**
-    /* @notice Sets fuses of a name that you own the parent of. Can also be called by the owner of a .eth name
+    /* @notice Sets fuses of a name that you own the parent of. Can also be called by the owner of a .bic name
      * @param parentNode Parent namehash of the name e.g. vitalik.xyz would be namehash('xyz')
      * @param labelhash Labelhash of the name, e.g. vitalik.xyz would be keccak256('vitalik')
      * @param fuses Fuses to burn
@@ -731,7 +648,7 @@ contract NameWrapper is
         uint256 tokenId,
         bytes calldata data
     ) public override returns (bytes4) {
-        //check if it's the eth registrar ERC721
+        //check if it's the bic registrar ERC721
         if (msg.sender != address(registrar)) {
             revert IncorrectTokenType();
         }
@@ -827,24 +744,6 @@ contract NameWrapper is
         _wrap(node, name, owner, fuses, expiry);
     }
 
-    function _prepareUpgrade(bytes32 node)
-        private
-        returns (uint32 fuses, uint64 expiry)
-    {
-        if (address(upgradeContract) == address(0)) {
-            revert CannotUpgrade();
-        }
-
-        if (!isTokenOwnerOrApproved(node, msg.sender)) {
-            revert Unauthorised(node, msg.sender);
-        }
-
-        (, fuses, expiry) = getData(uint256(node));
-
-        // burn token and fuse data
-        _burn(uint256(node));
-    }
-
     function _addLabelSetFusesAndTransfer(
         bytes32 parentNode,
         bytes32 node,
@@ -917,7 +816,7 @@ contract NameWrapper is
         uint64 maxExpiry
     ) internal pure returns (uint64) {
         // Expiry cannot be more than maximum allowed
-        // .eth names will check registrar, non .eth check parent
+        // .bic names will check registrar, non .bic check parent
         if (expiry > maxExpiry) {
             expiry = maxExpiry;
         }

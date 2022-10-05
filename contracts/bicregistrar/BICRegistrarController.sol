@@ -6,6 +6,7 @@ import {StringUtils} from "./StringUtils.sol";
 import {Resolver} from "../resolvers/Resolver.sol";
 import {ReverseRegistrar} from "../registry/ReverseRegistrar.sol";
 import {IBICRegistrarController, IPriceOracle} from "./IBICRegistrarController.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -27,7 +28,8 @@ error MaxCommitmentAgeTooHigh();
  */
 contract BICRegistrarController is
     Ownable,
-    IBICRegistrarController
+    IBICRegistrarController,
+    IERC165
 {
     using StringUtils for *;
     using Address for address;

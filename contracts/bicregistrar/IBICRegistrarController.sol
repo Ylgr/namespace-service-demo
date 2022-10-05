@@ -1,8 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ~0.8.17;
 
+import "./IPriceOracle.sol";
 
 interface IBICRegistrarController {
+
+    function rentPrice(string memory, uint256)
+    external
+    returns (IPriceOracle.Price memory);
 
     function available(string memory) external returns (bool);
 
