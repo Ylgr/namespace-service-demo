@@ -7,6 +7,7 @@ import {Resolver} from "../resolvers/Resolver.sol";
 import {ReverseRegistrar} from "../registry/ReverseRegistrar.sol";
 import {IBICRegistrarController} from "./IBICRegistrarController.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -39,6 +40,7 @@ contract BICRegistrarController is
         0xc26db91ae2adeba5f9614a4608713fca2a47a826ccd9757b9b163899b320f834;
     uint64 private constant MAX_EXPIRY = type(uint64).max;
     BaseRegistrarImplementation immutable base;
+    IERC20 immutable bic;
     uint256 public immutable minCommitmentAge;
     uint256 public immutable maxCommitmentAge;
     ReverseRegistrar public immutable reverseRegistrar;
@@ -63,6 +65,7 @@ contract BICRegistrarController is
 
     constructor(
         BaseRegistrarImplementation _base,
+        IERC20 _bic,
         uint256 _minCommitmentAge,
         uint256 _maxCommitmentAge,
         ReverseRegistrar _reverseRegistrar,
@@ -77,6 +80,7 @@ contract BICRegistrarController is
         }
 
         base = _base;
+        bic = _bic;
         minCommitmentAge = _minCommitmentAge;
         maxCommitmentAge = _maxCommitmentAge;
         reverseRegistrar = _reverseRegistrar;
@@ -87,7 +91,7 @@ contract BICRegistrarController is
         string memory name,
         uint256 expires,
         uint256 duration
-    ) public view returns (Price memory) {
+    ) public pure returns (Price memory) {
         uint256 len = name.strlen();
         uint256 basePrice;
 
@@ -167,7 +171,7 @@ contract BICRegistrarController is
     }
 
     function register(
-        string calldata name,
+        string memory name,
         address owner,
         uint256 duration,
         bytes32 secret,
@@ -175,12 +179,14 @@ contract BICRegistrarController is
         bytes[] calldata data,
         bool reverseRecord,
         uint32 fuses,
-        uint64 wrapperExpiry
-    ) public payable override {
+        uint64 wrapperExpiry,
+        uint256 fee
+    ) public override {
         Price memory price = rentPrice(name, duration);
-        if (msg.value < price.base + price.premium) {
+        if (fee < price.base + price.premium) {
             revert InsufficientValue();
         }
+        bic.transferFrom(msg.sender, address(this), fee);
 
         _consumeCommitment(
             name,
@@ -223,49 +229,50 @@ contract BICRegistrarController is
             price.premium,
             expires
         );
-
-        if (msg.value > (price.base + price.premium)) {
-            payable(msg.sender).transfer(
-                msg.value - (price.base + price.premium)
-            );
-        }
     }
 
-    function renew(string calldata name, uint256 duration)
+    function renew(
+        string calldata name,
+        uint256 duration,
+        uint256 fee
+    )
         external
-        payable
         override
     {
-        _renew(name, duration, 0, 0);
+        _renew(name, duration, 0, 0, fee);
     }
 
     function renewWithFuses(
         string calldata name,
         uint256 duration,
         uint32 fuses,
-        uint64 wrapperExpiry
-    ) external payable {
+        uint64 wrapperExpiry,
+        uint256 fee
+    ) external {
         bytes32 labelhash = keccak256(bytes(name));
         bytes32 nodehash = keccak256(abi.encodePacked(BIC_NODE, labelhash));
         if (!nameWrapper.isTokenOwnerOrApproved(nodehash, msg.sender)) {
             revert Unauthorised(nodehash);
         }
-        _renew(name, duration, fuses, wrapperExpiry);
+        _renew(name, duration, fuses, wrapperExpiry, fee);
     }
 
     function _renew(
         string calldata name,
         uint256 duration,
         uint32 fuses,
-        uint64 wrapperExpiry
+        uint64 wrapperExpiry,
+        uint256 fee
     ) internal {
         bytes32 labelhash = keccak256(bytes(name));
         bytes32 nodehash = keccak256(abi.encodePacked(BIC_NODE, labelhash));
         uint256 tokenId = uint256(labelhash);
         Price memory price = rentPrice(name, duration);
-        if (msg.value < price.base) {
+        if (fee < price.base) {
             revert InsufficientValue();
         }
+        bic.transferFrom(msg.sender, address(this), fee);
+
         uint256 expires;
         if (nameWrapper.isWrapped(nodehash)) {
             expires = nameWrapper.renew(
@@ -278,15 +285,11 @@ contract BICRegistrarController is
             expires = base.renew(tokenId, duration);
         }
 
-        if (msg.value > price.base) {
-            payable(msg.sender).transfer(msg.value - price.base);
-        }
-
-        emit NameRenewed(name, labelhash, msg.value, expires);
+        emit NameRenewed(name, labelhash, fee, expires);
     }
 
     function withdraw() public {
-        payable(owner()).transfer(address(this).balance);
+        bic.transferFrom(address(this), owner(), bic.balanceOf(address(this)));
     }
 
     function supportsInterface(bytes4 interfaceID)

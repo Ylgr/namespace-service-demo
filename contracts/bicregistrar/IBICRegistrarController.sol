@@ -28,7 +28,7 @@ interface IBICRegistrarController {
     function commit(bytes32) external;
 
     function register(
-        string calldata,
+        string memory,
         address,
         uint256,
         bytes32,
@@ -36,8 +36,9 @@ interface IBICRegistrarController {
         bytes[] calldata,
         bool,
         uint32,
-        uint64
-    ) external payable;
+        uint64,
+        uint256
+    ) external;
 
-    function renew(string calldata, uint256) external payable;
+    function renew(string calldata, uint256, uint256) external;
 }
