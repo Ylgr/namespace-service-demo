@@ -19,7 +19,7 @@ describe("BaseRegistrarImplementation", function () {
         const ownerAccount = accounts[0];
         const controllerAccount = accounts[1];
         const registrantAccount = accounts[2];
-        const otherAccount = accounts[2];
+        const otherAccount = accounts[3];
         await registrar.addController(controllerAccount.address);
         await ens.setSubnodeOwner('0x0000000000000000000000000000000000000000000000000000000000000000', sha3('bic'), registrar.address);
 
