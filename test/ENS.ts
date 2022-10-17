@@ -1,4 +1,3 @@
-// const sha3 = require('web3-utils').sha3;
 import {sha3} from "web3-utils";
 import {expect} from "chai";
 import {ethers} from "hardhat";
