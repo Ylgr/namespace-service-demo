@@ -4,6 +4,7 @@ import "../registry/ENS.sol";
 import "./IBaseRegistrar.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
     // A map of expiry times

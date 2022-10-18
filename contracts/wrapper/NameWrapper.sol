@@ -276,31 +276,24 @@ contract NameWrapper is
         address wrappedOwner,
         address resolver
     ) public override {
-        console.log("1");
         (bytes32 labelhash, uint256 offset) = name.readLabel(0);
         bytes32 parentNode = name.namehash(offset);
         bytes32 node = _makeNode(parentNode, labelhash);
-        console.log("2");
 
         if (parentNode == BIC_NODE) {
             revert IncompatibleParent();
         }
-        console.log("3");
 
         address owner = ens.owner(node);
-        console.log("3.5");
         if (owner != msg.sender && !ens.isApprovedForAll(owner, msg.sender)) {
-            console.log("owner: %s ; msg.sender: %s ; ens.isApprovedForAll(owner, msg.sender): %s", owner, msg.sender, ens.isApprovedForAll(owner, msg.sender));
             revert Unauthorised(node, msg.sender);
         }
-        console.log("4");
 
         if (resolver != address(0)) {
             ens.setResolver(node, resolver);
         }
 
         ens.setOwner(node, address(this));
-        console.log("5");
 
         _wrap(node, name, wrappedOwner, 0, 0);
     }
