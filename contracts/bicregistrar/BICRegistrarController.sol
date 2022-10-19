@@ -12,6 +12,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {INameWrapper} from "../wrapper/INameWrapper.sol";
+import "hardhat/console.sol";
 
 error CommitmentTooNew(bytes32 commitment);
 error CommitmentTooOld(bytes32 commitment);
@@ -96,15 +97,15 @@ contract BICRegistrarController is
         uint256 basePrice;
 
         if (len == 1) {
-            basePrice = 10e10 * duration;
+            basePrice = 10 * duration;
         } else if (len == 2) {
-            basePrice = 6e10 * duration;
+            basePrice = 6 * duration;
         } else if (len == 3) {
-            basePrice = 3e10 * duration;
+            basePrice = 3 * duration;
         } else if (len == 4) {
-            basePrice = 2e10 * duration;
+            basePrice = 2 * duration;
         } else {
-            basePrice = 1e10 * duration;
+            basePrice = 1 * duration;
         }
 
         return Price({
@@ -183,9 +184,12 @@ contract BICRegistrarController is
         uint256 fee
     ) public override {
         Price memory price = rentPrice(name, duration);
+        console.log("fee: %s, price base: %s, price premium: %s", fee, price.base, price.premium);
+        console.log("duration: %s", duration);
         if (fee < price.base + price.premium) {
             revert InsufficientValue();
         }
+        console.log("balance: %s", bic.balanceOf(msg.sender));
         bic.transferFrom(msg.sender, address(this), fee);
 
         _consumeCommitment(
