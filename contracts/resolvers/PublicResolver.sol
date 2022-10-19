@@ -31,7 +31,7 @@ contract PublicResolver is
 {
     ENS immutable ens;
 //    INameWrapper immutable nameWrapper;
-    address immutable trustedETHController;
+    address immutable trustedBICController;
     address immutable trustedReverseRegistrar;
 
     /**
@@ -52,12 +52,12 @@ contract PublicResolver is
     constructor(
         ENS _ens,
 //        INameWrapper wrapperAddress,
-        address _trustedETHController,
+        address _trustedBICController,
         address _trustedReverseRegistrar
     ) {
         ens = _ens;
 //        nameWrapper = wrapperAddress;
-        trustedETHController = _trustedETHController;
+        trustedBICController = _trustedBICController;
         trustedReverseRegistrar = _trustedReverseRegistrar;
     }
 
@@ -87,7 +87,7 @@ contract PublicResolver is
 
     function isAuthorised(bytes32 node) internal view override returns (bool) {
         if (
-            msg.sender == trustedETHController ||
+            msg.sender == trustedBICController ||
             msg.sender == trustedReverseRegistrar
         ) {
             return true;
