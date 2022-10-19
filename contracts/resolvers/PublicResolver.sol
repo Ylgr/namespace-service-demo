@@ -11,9 +11,9 @@ import "./profiles/PubkeyResolver.sol";
 import "./profiles/TextResolver.sol";
 import "./Multicallable.sol";
 
-//interface INameWrapper {
-//    function ownerOf(uint256 id) external view returns (address);
-//}
+interface INameWrapper {
+    function ownerOf(uint256 id) external view returns (address);
+}
 
 /**
  * A simple resolver anyone can use; only allows the owner of a node to set its
@@ -30,7 +30,7 @@ contract PublicResolver is
     TextResolver
 {
     ENS immutable ens;
-//    INameWrapper immutable nameWrapper;
+    INameWrapper immutable nameWrapper;
     address immutable trustedBICController;
     address immutable trustedReverseRegistrar;
 
@@ -51,12 +51,12 @@ contract PublicResolver is
 
     constructor(
         ENS _ens,
-//        INameWrapper wrapperAddress,
+        INameWrapper wrapperAddress,
         address _trustedBICController,
         address _trustedReverseRegistrar
     ) {
         ens = _ens;
-//        nameWrapper = wrapperAddress;
+        nameWrapper = wrapperAddress;
         trustedBICController = _trustedBICController;
         trustedReverseRegistrar = _trustedReverseRegistrar;
     }
@@ -93,9 +93,9 @@ contract PublicResolver is
             return true;
         }
         address owner = ens.owner(node);
-//        if (owner == address(nameWrapper)) {
-//            owner = nameWrapper.ownerOf(uint256(node));
-//        }
+        if (owner == address(nameWrapper)) {
+            owner = nameWrapper.ownerOf(uint256(node));
+        }
         return owner == msg.sender || isApprovedForAll(owner, msg.sender);
     }
 

@@ -10,11 +10,14 @@ describe("Resolver", function () {
     const deployContract = async () => {
         const ENS = await ethers.getContractFactory('ENSRegistry');
         const ens = await ENS.deploy();
+        const DummyNameWrapper = await ethers.getContractFactory('DummyNameWrapper');
+        const dummyNameWrapper = await DummyNameWrapper.deploy();
         const accounts = await ethers.getSigners();
 
         const PublicResolver = await ethers.getContractFactory('PublicResolver');
         const resolver = await PublicResolver.deploy(
             ens.address,
+            dummyNameWrapper.address,
             accounts[9].address, // trusted contract
             EMPTY_ADDRESS
         );
