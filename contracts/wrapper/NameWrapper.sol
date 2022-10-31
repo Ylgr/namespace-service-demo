@@ -10,7 +10,6 @@ import {IBaseRegistrar} from "../bicregistrar/IBaseRegistrar.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {BytesUtils} from "./BytesUtils.sol";
-import "hardhat/console.sol";
 
 error Unauthorised(bytes32 node, address addr);
 error NameNotFound();
@@ -52,7 +51,6 @@ contract NameWrapper is
         metadataService = _metadataService;
 
         /* Burn PARENT_CANNOT_CONTROL and CANNOT_UNWRAP fuses for ROOT_NODE and BIC_NODE */
-
         _setData(
             uint256(BIC_NODE),
             address(0),

@@ -54,12 +54,14 @@ describe("BICRegistrarController", function () {
             ens.address,
             namehash('bic'),
         )
+        const metaDataservice = await deploy('StaticMetadataService','https://ens.domains')
 
         nameWrapper = await deploy(
             'NameWrapper',
             ens.address,
             baseRegistrar.address,
-            ownerAccount,
+            // ownerAccount,
+            metaDataservice.address,
         )
 
         reverseRegistrar = await deploy('ReverseRegistrar', ens.address)
