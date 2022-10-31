@@ -22,17 +22,13 @@ async function main() {
 
   const metaDataservice = await deploy('StaticMetadataService','https://ens.domains')
   console.log('3')
-  try {
     const nameWrapper = await deploy(
         'NameWrapper',
         ens.address,
         baseRegistrar.address,
         metaDataservice.address,
     )
-    console.log('3.5')
-  } catch (e) {
-    console.log(e.stack)
-  }
+  console.log('3.5')
 
 
   const reverseRegistrar = await deploy('ReverseRegistrar', ens.address)
@@ -67,15 +63,17 @@ async function main() {
       controller.address,
       reverseRegistrar.address,
   )
+  console.log('7')
 
   await ens.setSubnodeOwner(EMPTY_BYTES, sha3('reverse'), signers[0].address)
+  console.log('8')
+
   await ens.setSubnodeOwner(
       namehash('reverse'),
       sha3('addr'),
       reverseRegistrar.address
   )
   console.log(`Verifying contract on Etherscan...`);
-  console.log('7')
 
   await run(`verify:verify`, {
     address: ens.address,

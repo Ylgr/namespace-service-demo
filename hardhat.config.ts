@@ -3,7 +3,19 @@ import "@nomicfoundation/hardhat-toolbox";
 require("dotenv").config();
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.17",
+  solidity: {
+    compilers: [
+      {
+        version: '0.8.17',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 10000,
+          },
+        },
+      },
+    ],
+  },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true
@@ -15,7 +27,7 @@ const config: HardhatUserConfig = {
     },
     localhost: {
       url: "http://127.0.0.1:8545",
-      chainId: 1337
+      chainId: 1337,
     },
   },
   etherscan: {

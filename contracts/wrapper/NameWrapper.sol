@@ -10,6 +10,7 @@ import {IBaseRegistrar} from "../bicregistrar/IBaseRegistrar.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {BytesUtils} from "./BytesUtils.sol";
+import "hardhat/console.sol";
 
 error Unauthorised(bytes32 node, address addr);
 error NameNotFound();
@@ -46,6 +47,8 @@ contract NameWrapper is
         IBaseRegistrar _registrar,
         IMetadataService _metadataService
     ) {
+        console.log("sdasdsad");
+
         ens = _ens;
         registrar = _registrar;
         metadataService = _metadataService;
