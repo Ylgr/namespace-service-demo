@@ -204,4 +204,10 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
             interfaceID == ERC721_ID ||
             interfaceID == RECLAIM_ID;
     }
+
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        _requireMinted(tokenId);
+        return "https://raw.githubusercontent.com/Ylgr/namespace-service-demo/master/metadata/uri.json";
+    }
+
 }

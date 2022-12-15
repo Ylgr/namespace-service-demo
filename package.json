@@ -24,8 +24,10 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
     "@openzeppelin/test-helpers": "^0.5.16",
+    "bootstrap": "^5.2.3",
     "dns-packet": "^5.4.0",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "react-bootstrap": "^2.7.0"
   },
   "scripts": {
     "test": "npx hardhat test",

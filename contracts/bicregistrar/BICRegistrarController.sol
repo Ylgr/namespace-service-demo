@@ -41,7 +41,7 @@ contract BICRegistrarController is
         0xc26db91ae2adeba5f9614a4608713fca2a47a826ccd9757b9b163899b320f834;
     uint64 private constant MAX_EXPIRY = type(uint64).max;
     BaseRegistrarImplementation immutable base;
-    IERC20 immutable bic;
+    IERC20 public immutable bic;
     uint256 public immutable minCommitmentAge;
     uint256 public immutable maxCommitmentAge;
     ReverseRegistrar public immutable reverseRegistrar;
