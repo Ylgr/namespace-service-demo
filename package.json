@@ -30,7 +30,7 @@
     "react-bootstrap": "^2.7.0"
   },
   "scripts": {
-    "test": "npx hardhat test",
+    "test": "npx hardhat test --grep 'should permit new registrations'",
     "deploy-ganache": " npx hardhat run ./scripts/deploy.ts --network localhost"
   }
 }

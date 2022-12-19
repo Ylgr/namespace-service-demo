@@ -199,6 +199,8 @@ describe("BICRegistrarController", function () {
     it('should permit new registrations', async () => {
         const name = 'newname'
         const balanceBefore = await bicToken.balanceOf(controller.address)
+        const nftBefore = await baseRegistrar.balanceOf(registrantAccount)
+        console.log('nftBefore: ', nftBefore)
         const tx = await registerName(name)
         const block = await provider.getBlock(tx.blockNumber)
         await expect(tx)
@@ -211,7 +213,10 @@ describe("BICRegistrarController", function () {
                 0,
                 block.timestamp + REGISTRATION_TIME,
             )
-
+        // nameWrapper.
+        const nftAfter = await baseRegistrar.balanceOf(registrantAccount)
+        console.log('registrantAccount: ', registrantAccount)
+        console.log('nftAfter: ', nftAfter)
         expect(
             (await bicToken.balanceOf(controller.address)) - balanceBefore,
         ).to.equal(REGISTRATION_TIME)

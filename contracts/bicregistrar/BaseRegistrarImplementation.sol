@@ -147,6 +147,7 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
         uint256 duration,
         bool updateRegistry
     ) internal live onlyController returns (uint256) {
+        console.log("over here");
         require(available(id));
         require(
             block.timestamp + duration + GRACE_PERIOD >
@@ -158,7 +159,10 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
             // Name was previously owned, and expired
             _burn(id);
         }
+        console.log(owner);
         _mint(owner, id);
+        console.log("and mint");
+
         if (updateRegistry) {
             ens.setSubnodeOwner(baseNode, bytes32(id), owner);
         }
