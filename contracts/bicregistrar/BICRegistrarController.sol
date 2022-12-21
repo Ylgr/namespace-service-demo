@@ -165,10 +165,14 @@ contract BICRegistrarController is
     }
 
     function commit(bytes32 commitment) public override {
+        console.log("commit");
         if (commitments[commitment] + maxCommitmentAge >= block.timestamp) {
             revert UnexpiredCommitmentExists(commitment);
         }
+        console.log("over here");
+
         commitments[commitment] = block.timestamp;
+        console.log("over here 2");
     }
 
     function register(

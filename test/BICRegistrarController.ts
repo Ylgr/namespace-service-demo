@@ -27,25 +27,31 @@ describe("BICRegistrarController", function () {
     let baseRegistrar
     let controller
     let controller2 // controller signed by accounts[1]
+    let controller3 // controller signed by accounts[3]
     let priceOracle
     let reverseRegistrar
     let nameWrapper
     let callData
     let bicToken
     let bicToken2
+    let bicToken3
     let signers
     let result
     const secret =
         '0x0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF'
+    const secret2 =
+        '0x0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDE0'
     let ownerAccount // Account that owns the registrar
     let registrantAccount // Account that owns test names
+    let registrantAccount3 // Account that owns test names
     let accounts = []
 
     before(async () => {
         signers = await ethers.getSigners()
         ownerAccount = await signers[0].getAddress()
         registrantAccount = await signers[1].getAddress()
-        accounts = [ownerAccount, registrantAccount, signers[2].getAddress()]
+        registrantAccount3 = await signers[3].getAddress()
+        accounts = [ownerAccount, registrantAccount, signers[2].getAddress(), registrantAccount3]
 
         ens = await deploy('ENSRegistry')
 
@@ -70,6 +76,7 @@ describe("BICRegistrarController", function () {
 
         bicToken = await deploy('BicToken')
         bicToken2 = bicToken.connect(signers[1])
+        bicToken3 = bicToken.connect(signers[3])
         controller = await deploy(
             'BICRegistrarController',
             baseRegistrar.address,
@@ -80,6 +87,7 @@ describe("BICRegistrarController", function () {
             nameWrapper.address,
         )
         controller2 = controller.connect(signers[1])
+        controller3 = controller.connect(signers[3])
         await baseRegistrar.addController(controller.address)
         await nameWrapper.setController(controller.address, true)
         await baseRegistrar.addController(nameWrapper.address)
@@ -284,6 +292,38 @@ describe("BICRegistrarController", function () {
         )
         expect(await resolver['text'](nodehash, 'url')).to.equal('ethereum.com')
         expect(await nameWrapper.ownerOf(nodehash)).to.equal(registrantAccount)
+
+        const nftOwner = await baseRegistrar.ownerOf(sha3('newconfigname')); //12907018822474687872475583629413466407613283555302029277224239900530719130114
+        console.log('nftOwner: ', nftOwner)
+        const erc1155Owner = await nameWrapper.ownerOf(namehash('newconfigname.bic')); //21112947957856758576096972903056240599071127168927632653066871130307181825571
+        console.log('erc1155Owner: ', erc1155Owner)
+        const nameAvailable = await controller.available('newconfigname')
+        console.log('nameAvailable: ', nameAvailable)
+
+        await advanceTime(REGISTRATION_TIME + 1000);
+        const nameAvailable2 = await controller.available('newconfigname')
+        console.log('nameAvailable2: ', nameAvailable2)
+        // var commitment2 = await controller2.makeCommitment(
+        //     'newconfigname',
+        //     registrantAccount,
+        //     REGISTRATION_TIME,
+        //     secret2,
+        //     resolver.address,
+        //     callData,
+        //     false,
+        //     0,
+        //     0,
+        // )
+        // var tx3 = await controller2.commit(commitment2)
+
+        const nftOwner2 = await baseRegistrar.ownerOf(sha3('newconfigname')); //12907018822474687872475583629413466407613283555302029277224239900530719130114
+        console.log('nftOwner: ', nftOwner)
+        const erc1155Owner2 = await nameWrapper.ownerOf(namehash('newconfigname.bic')); //21112947957856758576096972903056240599071127168927632653066871130307181825571
+        console.log('erc1155Owner: ', erc1155Owner)
+
+        expect(await ens.owner(nodehash)).to.equal(nameWrapper.address)
+
+
     })
 
 })
