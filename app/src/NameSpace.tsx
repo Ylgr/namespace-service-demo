@@ -97,6 +97,7 @@ function NameSpace() {
             <h1>Namespace Admin:</h1>
             <h2>Root owner <a href={`https://testnet.bscscan.com/address/${rootOwner}`}>{rootOwner}</a></h2>
             <h2>Bic owner <a href={`https://testnet.bscscan.com/address/${bicOwner}`}>{bicOwner}</a></h2>
+            <h2>Your ENS: </h2>
             <InputGroup className="mb-3">
                 <InputGroup.Text id="basic-addon3">
                     Namespace ({price} BIC):

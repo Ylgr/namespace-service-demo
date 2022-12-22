@@ -3,7 +3,7 @@ import {namehash} from "ethers/lib/utils";
 import {sha3, toBN} from "web3-utils";
 import {BN} from "bn.js";
 import {expect} from "chai";
-import {advanceTime} from "./evm";
+import {advanceTime, mine} from "./evm";
 
 const deploy = async (contractName, ...args) => {
     const artifact = await ethers.getContractFactory(contractName)
@@ -25,12 +25,16 @@ describe("BICRegistrarController", function () {
     let resolver
     let resolver2 // resolver signed by accounts[1]
     let baseRegistrar
+    let baseRegistrar2
+    let baseRegistrar3
     let controller
     let controller2 // controller signed by accounts[1]
     let controller3 // controller signed by accounts[3]
     let priceOracle
     let reverseRegistrar
     let nameWrapper
+    let nameWrapper2
+    let nameWrapper3
     let callData
     let bicToken
     let bicToken2
@@ -60,6 +64,8 @@ describe("BICRegistrarController", function () {
             ens.address,
             namehash('bic'),
         )
+        baseRegistrar2 = baseRegistrar.connect(signers[1])
+        baseRegistrar3 = baseRegistrar.connect(signers[3])
         const metaDataservice = await deploy('StaticMetadataService','https://ens.domains')
 
         nameWrapper = await deploy(
@@ -88,6 +94,9 @@ describe("BICRegistrarController", function () {
         )
         controller2 = controller.connect(signers[1])
         controller3 = controller.connect(signers[3])
+        nameWrapper2 = nameWrapper.connect(signers[1])
+        nameWrapper3 = nameWrapper.connect(signers[3])
+
         await baseRegistrar.addController(controller.address)
         await nameWrapper.setController(controller.address, true)
         await baseRegistrar.addController(nameWrapper.address)
@@ -246,7 +255,6 @@ describe("BICRegistrarController", function () {
         expect(await controller2.commitments(commitment)).to.equal(
             (await ethers.provider.getBlock(tx.blockNumber)).timestamp,
         )
-
         await advanceTime((await controller2.minCommitmentAge()).toNumber())
         var balanceBefore = await bicToken.balanceOf(controller.address)
         await bicToken.transfer(accounts[1], BUFFERED_REGISTRATION_COST)
@@ -300,29 +308,60 @@ describe("BICRegistrarController", function () {
         const nameAvailable = await controller.available('newconfigname')
         console.log('nameAvailable: ', nameAvailable)
 
-        await advanceTime(REGISTRATION_TIME + 1000);
+        await nameWrapper2.unwrapBIC2LD(sha3('newconfigname'), registrantAccount, registrantAccount3)
+
+        const nftOwner3 = await baseRegistrar.ownerOf(sha3('newconfigname')); //12907018822474687872475583629413466407613283555302029277224239900530719130114
+        console.log('nftOwner3: ', nftOwner3)
+        const erc1155Owner3 = await nameWrapper.ownerOf(namehash('newconfigname.bic')); //21112947957856758576096972903056240599071127168927632653066871130307181825571
+        console.log('erc1155Owner3: ', erc1155Owner3)
+        expect(await ens.owner(nodehash)).to.equal(registrantAccount3)
+        await baseRegistrar2.reclaim(sha3('newconfigname'), registrantAccount)
+        expect(await ens.owner(nodehash)).to.equal(registrantAccount)
+        //
+        await advanceTime(REGISTRATION_TIME + 90 * 24 * 60 * 60);
+        // await advanceTime(10200000); // 518400 = 90 days
+        await mine()
         const nameAvailable2 = await controller.available('newconfigname')
         console.log('nameAvailable2: ', nameAvailable2)
-        // var commitment2 = await controller2.makeCommitment(
-        //     'newconfigname',
-        //     registrantAccount,
-        //     REGISTRATION_TIME,
-        //     secret2,
-        //     resolver.address,
-        //     callData,
-        //     false,
-        //     0,
-        //     0,
-        // )
-        // var tx3 = await controller2.commit(commitment2)
+        var commitment3 = await controller3.makeCommitment(
+            'newconfigname',
+            registrantAccount3,
+            REGISTRATION_TIME,
+            secret,
+            resolver.address,
+            callData,
+            false,
+            0,
+            0,
+        )
 
+        var tx3 = await controller3.commit(commitment3)
+
+
+        await advanceTime((await controller3.minCommitmentAge()).toNumber())
+        await mine()
+
+        await bicToken.transfer(registrantAccount3, BUFFERED_REGISTRATION_COST)
+        await bicToken3.approve(controller.address, BUFFERED_REGISTRATION_COST)
+        var tx4 = await controller3.register(
+            'newconfigname',
+            registrantAccount3,
+            REGISTRATION_TIME,
+            secret,
+            resolver.address,
+            callData,
+            false,
+            0,
+            0,
+            BUFFERED_REGISTRATION_COST,
+        )
         const nftOwner2 = await baseRegistrar.ownerOf(sha3('newconfigname')); //12907018822474687872475583629413466407613283555302029277224239900530719130114
-        console.log('nftOwner: ', nftOwner)
+        console.log('nftOwner2: ', nftOwner2)
         const erc1155Owner2 = await nameWrapper.ownerOf(namehash('newconfigname.bic')); //21112947957856758576096972903056240599071127168927632653066871130307181825571
-        console.log('erc1155Owner: ', erc1155Owner)
+        console.log('erc1155Owner2: ', erc1155Owner2)
+        await nameWrapper3.unwrapBIC2LD(sha3('newconfigname'), registrantAccount3, registrantAccount3)
 
-        expect(await ens.owner(nodehash)).to.equal(nameWrapper.address)
-
+        expect(await ens.owner(nodehash)).to.equal(registrantAccount3)
 
     })
 

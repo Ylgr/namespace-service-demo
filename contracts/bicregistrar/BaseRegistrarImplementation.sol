@@ -49,6 +49,7 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
         returns (bool)
     {
         address owner = ownerOf(tokenId);
+        console.log(owner);
         return (spender == owner ||
             getApproved(tokenId) == spender ||
             isApprovedForAll(owner, spender));
@@ -110,6 +111,8 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
     // Returns true iff the specified name is available for registration.
     function available(uint256 id) public view override returns (bool) {
         // Not available if it's registered here or in its grace period.
+        console.log(expiries[id] + GRACE_PERIOD);
+        console.log(block.timestamp);
         return expiries[id] + GRACE_PERIOD < block.timestamp;
     }
 
