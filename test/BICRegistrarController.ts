@@ -32,6 +32,7 @@ describe("BICRegistrarController", function () {
     let controller3 // controller signed by accounts[3]
     let priceOracle
     let reverseRegistrar
+    let reverseRegistrar3
     let nameWrapper
     let nameWrapper2
     let nameWrapper3
@@ -77,6 +78,7 @@ describe("BICRegistrarController", function () {
         )
 
         reverseRegistrar = await deploy('ReverseRegistrar', ens.address)
+        reverseRegistrar3 = reverseRegistrar.connect(signers[3])
 
         await ens.setSubnodeOwner(EMPTY_BYTES, sha3('bic'), baseRegistrar.address)
 
@@ -123,7 +125,7 @@ describe("BICRegistrarController", function () {
         ]
 
         resolver2 = await resolver.connect(signers[1])
-
+        await reverseRegistrar.setDefaultResolver(resolver.address);
         await ens.setSubnodeOwner(EMPTY_BYTES, sha3('reverse'), accounts[0], {
             from: accounts[0],
         })
@@ -247,7 +249,7 @@ describe("BICRegistrarController", function () {
             secret,
             resolver.address,
             callData,
-            false,
+            true,
             0,
             0,
         )
@@ -266,7 +268,7 @@ describe("BICRegistrarController", function () {
             secret,
             resolver.address,
             callData,
-            false,
+            true,
             0,
             0,
             BUFFERED_REGISTRATION_COST,
@@ -308,6 +310,11 @@ describe("BICRegistrarController", function () {
         const nameAvailable = await controller.available('newconfigname')
         console.log('nameAvailable: ', nameAvailable)
 
+        console.log('nameWrapper name:',
+            ethers.utils.toUtf8String(
+                await nameWrapper.names(namehash('newconfigname.bic'))
+            )
+        )
         await nameWrapper2.unwrapBIC2LD(sha3('newconfigname'), registrantAccount, registrantAccount3)
 
         const nftOwner3 = await baseRegistrar.ownerOf(sha3('newconfigname')); //12907018822474687872475583629413466407613283555302029277224239900530719130114
@@ -317,10 +324,24 @@ describe("BICRegistrarController", function () {
         expect(await ens.owner(nodehash)).to.equal(registrantAccount3)
         await baseRegistrar2.reclaim(sha3('newconfigname'), registrantAccount)
         expect(await ens.owner(nodehash)).to.equal(registrantAccount)
+
+        const defaultResolver = await reverseRegistrar.defaultResolver()
+        console.log('defaultResolver: ', defaultResolver)
+
+        const node = await reverseRegistrar.node(registrantAccount)
+        console.log('node: ', node);
+        const name = await resolver.name(node)
+        console.log('name: ', name)
+        console.log('reverse: ', await ens.owner(namehash('newconfigname.addr.reverse')))
+        console.log('resolver.text(namehash(\'newconfigname.bic\'): ', await resolver.text(namehash('newconfigname.bic'), 'url'))
         //
         await advanceTime(REGISTRATION_TIME + 90 * 24 * 60 * 60);
         // await advanceTime(10200000); // 518400 = 90 days
         await mine()
+
+        const name2 = await resolver.name(node)
+        console.log('name2: ', name2)
+
         const nameAvailable2 = await controller.available('newconfigname')
         console.log('nameAvailable2: ', nameAvailable2)
         var commitment3 = await controller3.makeCommitment(
@@ -362,6 +383,15 @@ describe("BICRegistrarController", function () {
         await nameWrapper3.unwrapBIC2LD(sha3('newconfigname'), registrantAccount3, registrantAccount3)
 
         expect(await ens.owner(nodehash)).to.equal(registrantAccount3)
+
+        await reverseRegistrar3.setNameForAddr(registrantAccount3, registrantAccount3, resolver.address, "toainguyet.com")
+        const node3 = await reverseRegistrar3.node(registrantAccount3)
+        console.log('node3: ', node3);
+        const name3 = await resolver.name(node3)
+        console.log('name3: ', name3)
+        const name4 = await resolver.name(node)
+        console.log('name4: ', name4)
+        console.log('reverse: ', await ens.owner(namehash('newconfigname.addr.reverse')))
 
     })
 

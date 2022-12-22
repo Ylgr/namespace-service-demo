@@ -353,6 +353,7 @@ contract BICRegistrarController is
         address resolver,
         address owner
     ) internal {
+        console.log("Sett name");
         reverseRegistrar.setNameForAddr(
             msg.sender,
             owner,

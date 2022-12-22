@@ -4,6 +4,7 @@ import "./ENS.sol";
 import "./IReverseRegistrar.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../root/Controllable.sol";
+import "hardhat/console.sol";
 
 abstract contract NameResolver {
     function setName(bytes32 node, string memory name) public virtual;
@@ -139,6 +140,7 @@ contract ReverseRegistrar is Ownable, Controllable, IReverseRegistrar {
         string memory name
     ) public override returns (bytes32) {
         bytes32 node = claimForAddr(addr, owner, resolver);
+        console.log(name);
         NameResolver(resolver).setName(node, name);
         return node;
     }
