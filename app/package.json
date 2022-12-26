@@ -20,11 +20,15 @@
     "wagmi": "^0.9.3",
     "web-vitals": "^2.1.4"
   },
+  "devDependencies": {
+    "gh-pages": "^4.0.0"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -43,5 +47,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "homepage": "https://ylgr.github.io/namespace-service-demo/"
 }
