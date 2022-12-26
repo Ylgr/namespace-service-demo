@@ -10,6 +10,7 @@ import { Web3Modal } from "@web3modal/react";
 import { Web3Button } from "@web3modal/react";
 import {Chain, configureChains, createClient, WagmiConfig} from "wagmi";
 import NameSpace from "./NameSpace";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
     const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID || ''

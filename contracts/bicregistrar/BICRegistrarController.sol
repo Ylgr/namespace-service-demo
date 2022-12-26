@@ -165,10 +165,14 @@ contract BICRegistrarController is
     }
 
     function commit(bytes32 commitment) public override {
+        console.log("commit");
         if (commitments[commitment] + maxCommitmentAge >= block.timestamp) {
             revert UnexpiredCommitmentExists(commitment);
         }
+        console.log("over here");
+
         commitments[commitment] = block.timestamp;
+        console.log("over here 2");
     }
 
     function register(
@@ -349,11 +353,12 @@ contract BICRegistrarController is
         address resolver,
         address owner
     ) internal {
+        console.log("Sett name");
         reverseRegistrar.setNameForAddr(
             msg.sender,
             owner,
             resolver,
-            string.concat(name, ".eth")
+            string.concat(name, ".bic")
         );
     }
 }

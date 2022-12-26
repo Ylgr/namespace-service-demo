@@ -235,6 +235,7 @@ contract NameWrapper is
         uint64 expiry
     ) external override onlyController returns (uint256 registrarExpiry) {
         uint256 tokenId = uint256(keccak256(bytes(label)));
+        console.log(tokenId);
         registrarExpiry = registrar.register(tokenId, address(this), duration);
         _wrapBIC2LD(label, wrappedOwner, fuses, expiry, resolver);
     }
@@ -840,6 +841,8 @@ contract NameWrapper is
         // Set PARENT_CANNOT_REPLACE to reflect wrapper + registrar control over the 2LD
         bytes32 labelhash = keccak256(bytes(label));
         bytes32 node = _makeNode(BIC_NODE, labelhash);
+        console.log("erc1155");
+        console.log(uint256(node));
         uint32 oldFuses;
 
         (, oldFuses, expiry) = _getBIC2LDDataAndNormaliseExpiry(
